@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Munich Brauhaus | Staff Training Hub</title>
+  <meta name="description" content="Staff training game hub for Munich Brauhaus Melbourne — learn the menu through fun interactive games."/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Rubik:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    /* ─── TOKENS ─────────────────────────────────────────────── */
+    :root {
+      --navy:    #182b54;
+      --navy2:   #0e1d38;
+      --yellow:  #f9c12e;
+      --yellow2: #ffd04d;
+      --blue:    #06a7e0;
+      --white:   #ffffff;
+      --light:   #f4f1ec;
+      --grey:    #7a7a7a;
+      --correct: #2ecc71;
+      --wrong:   #e74c3c;
+      --H: 'Oswald', sans-serif;
+      --B: 'Rubik', sans-serif;
+      --r: 14px;
+      --sh: 0 8px 32px rgba(24,43,84,0.22);
+      --sh2: 0 20px 60px rgba(24,43,84,0.35);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--B);
+      background: var(--navy);
+      color: var(--white);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background:
+        radial-gradient(ellipse at 15% 15%, rgba(249,193,46,0.09) 0%, transparent 50%),
+        radial-gradient(ellipse at 85% 85%, rgba(6,167,224,0.07) 0%, transparent 50%),
+        repeating-linear-gradient(45deg, transparent, transparent 40px, rgba(255,255,255,0.01) 40px, rgba(255,255,255,0.01) 80px);
+      pointer-events: none; z-index: 0;
+    }
+
+    /* ─── SCREENS ────────────────────────────────────────────── */
+    .screen { position: relative; z-index: 1; display: none; min-height: 100vh; }
+    .screen.active { display: flex; }
+
+    /* ─── SHARED COMPONENTS ──────────────────────────────────── */
+    .badge {
+      display: inline-block;
+      background: rgba(249,193,46,0.15);
+      border: 1px solid rgba(249,193,46,0.35);
+      color: var(--yellow);
+      font-family: var(--H);
+      font-size: 11px; letter-spacing: 3px; text-transform: uppercase;
+      padding: 5px 16px; border-radius: 99px;
+    }
+    .btn-primary {
+      background: var(--yellow); color: var(--navy);
+      border: none; font-family: var(--H);
+      font-size: 18px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px;
+      padding: 16px 48px; border-radius: 4px; cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 20px rgba(249,193,46,0.35);
+    }
+    .btn-primary:hover { background: var(--yellow2); transform: translateY(-2px); box-shadow: 0 8px 32px rgba(249,193,46,0.5); }
+    .btn-primary:active { transform: none; }
+    .btn-ghost {
+      background: transparent; border: 2px solid rgba(255,255,255,0.2);
+      color: rgba(255,255,255,0.65); font-family: var(--H);
+      font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 2px;
+      padding: 12px 28px; border-radius: 4px; cursor: pointer; transition: all 0.2s;
+    }
+    .btn-ghost:hover { border-color: rgba(255,255,255,0.5); color: var(--white); background: rgba(255,255,255,0.06); }
+
+    /* ─── TOP BAR (shared across all quiz screens) ───────────── */
+    .topbar {
+      width: 100%; background: rgba(14,29,56,0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      padding: 12px 24px; display: flex; align-items: center;
+      justify-content: space-between; gap: 16px;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .topbar-logo { font-family: var(--H); font-size: 15px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: var(--yellow); cursor: pointer; white-space: nowrap; }
+    .topbar-logo span { color: rgba(255,255,255,0.4); font-weight: 400; }
+    .topbar-badge { background: rgba(249,193,46,0.12); border: 1px solid rgba(249,193,46,0.25); border-radius: 99px; padding: 4px 12px; font-family: var(--H); font-size: 12px; color: var(--yellow); letter-spacing: 1px; text-transform: uppercase; }
+    .progress-wrap { flex: 1; max-width: 380px; }
+    .progress-info { display: flex; justify-content: space-between; font-size: 11px; color: rgba(255,255,255,0.45); margin-bottom: 4px; font-family: var(--H); letter-spacing: 1px; }
+    .progress-track { width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 99px; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, var(--yellow), #ffd04d); border-radius: 99px; transition: width 0.5s ease; }
+    .score-pill { background: rgba(249,193,46,0.12); border: 1px solid rgba(249,193,46,0.28); border-radius: 99px; padding: 4px 14px; font-family: var(--H); font-size: 13px; color: var(--yellow); white-space: nowrap; }
+    .score-pill b { font-size: 17px; }
+
+    /* ─── OPTION BUTTONS ─────────────────────────────────────── */
+    .opts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media(max-width:540px){ .opts-grid { grid-template-columns: 1fr; } }
+    .opt {
+      background: rgba(255,255,255,0.06); border: 2px solid rgba(255,255,255,0.12);
+      color: var(--white); font-family: var(--H);
+      font-size: clamp(14px, 2vw, 17px); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;
+      padding: 18px 18px; border-radius: var(--r); cursor: pointer;
+      text-align: left; display: flex; align-items: center; gap: 12px;
+      transition: all 0.18s; backdrop-filter: blur(4px);
+    }
+    .opt:hover:not(:disabled) { border-color: var(--yellow); background: rgba(249,193,46,0.1); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(249,193,46,0.18); }
+    .opt:disabled { cursor: not-allowed; }
+    .opt-ltr { width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; transition: all 0.18s; }
+    .opt:hover:not(:disabled) .opt-ltr { background: var(--yellow); color: var(--navy); }
+    .opt.correct { background: rgba(46,204,113,0.15)!important; border-color: var(--correct)!important; color: var(--correct)!important; animation: pop .35s ease; }
+    .opt.correct .opt-ltr { background: var(--correct)!important; color: #fff!important; }
+    .opt.wrong   { background: rgba(231,76,60,0.15)!important; border-color: var(--wrong)!important; color: rgba(231,76,60,0.85)!important; animation: shake .35s ease; }
+    .opt.wrong .opt-ltr   { background: var(--wrong)!important; color: #fff!important; }
+    .opt.dimmed  { opacity: 0.3; }
+    @keyframes pop   { 0%,100%{transform:scale(1)} 50%{transform:scale(1.03)} }
+    @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+
+    /* Feedback strip */
+    .feedback { border-radius: var(--r); padding: 16px 20px; display: none; align-items: flex-start; gap: 14px; animation: fadeup .3s ease; }
+    .feedback.show { display: flex; }
+    @keyframes fadeup { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+    .feedback.ok  { background: rgba(46,204,113,0.12); border: 1px solid rgba(46,204,113,0.28); }
+    .feedback.bad { background: rgba(231,76,60,0.12);  border: 1px solid rgba(231,76,60,0.28); }
+    .feedback-icon { font-size: 26px; flex-shrink: 0; }
+    .feedback-title { font-family: var(--H); font-size: 15px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px; }
+    .feedback.ok  .feedback-title { color: var(--correct); }
+    .feedback.bad .feedback-title { color: var(--wrong); }
+    .feedback-desc { font-size: 13px; color: rgba(255,255,255,0.6); line-height: 1.5; }
+
+    /* Next btn */
+    .btn-next { align-self: flex-end; background: var(--yellow); color: var(--navy); border: none; font-family: var(--H); font-size: 15px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; padding: 13px 36px; border-radius: 4px; cursor: pointer; display: none; align-items: center; gap: 8px; transition: all 0.18s; box-shadow: 0 4px 16px rgba(249,193,46,0.3); }
+    .btn-next.show { display: flex; }
+    .btn-next:hover { background: var(--yellow2); transform: translateY(-2px); }
+
+    /* Card */
+    .game-card { width: 100%; max-width: 800px; margin: 28px auto; padding: 0 20px 40px; display: flex; flex-direction: column; gap: 24px; animation: slidein .4s ease; }
+    @keyframes slidein { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:none} }
+    .cat-tag { display: inline-block; background: rgba(6,167,224,0.18); border: 1px solid rgba(6,167,224,0.35); color: var(--blue); font-family: var(--H); font-size: 11px; letter-spacing: 2px; text-transform: uppercase; padding: 4px 12px; border-radius: 99px; align-self: flex-start; }
+    .q-label { font-family: var(--H); font-size: clamp(18px,3.5vw,26px); font-weight: 500; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,0.85); line-height: 1.3; }
+
+    /* Image frame */
+    .img-frame { width: 100%; aspect-ratio: 4/3; max-height: 360px; border-radius: var(--r); overflow: hidden; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); box-shadow: var(--sh2); position: relative; }
+    .img-frame img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .5s ease; }
+    .img-frame:hover img { transform: scale(1.03); }
+    .img-shimmer { position: absolute; inset: 0; background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.04) 50%, transparent 100%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
+    .img-frame.loaded .img-shimmer { display: none; }
+    @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+
+    /* ─── RESULTS ─────────────────────────────────────────────── */
+    .results-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 40px 20px; text-align: center; gap: 28px; }
+    .res-emoji { font-size: 68px; animation: pop-in .5s cubic-bezier(.34,1.56,.64,1); }
+    @keyframes pop-in { from{transform:scale(0) rotate(-20deg);opacity:0} to{transform:scale(1);opacity:1} }
+    .res-title { font-family: var(--H); font-size: clamp(28px,6vw,52px); font-weight: 700; text-transform: uppercase; letter-spacing: 2px; }
+    .res-title span { color: var(--yellow); }
+    .ring-wrap { position: relative; width: 160px; height: 160px; }
+    .ring-wrap svg { width: 160px; height: 160px; transform: rotate(-90deg); }
+    .ring-bg  { fill: none; stroke: rgba(255,255,255,0.08); stroke-width: 10; }
+    .ring-fill{ fill: none; stroke: var(--yellow); stroke-width: 10; stroke-linecap: round; transition: stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1); }
+    .ring-txt { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .ring-txt .big   { font-family: var(--H); font-size: 42px; font-weight: 700; color: var(--yellow); line-height: 1; }
+    .ring-txt .small { font-size: 11px; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+    .res-msg { font-size: 16px; color: rgba(255,255,255,0.65); line-height: 1.65; max-width: 440px; }
+    .breakdown { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
+    .bcard { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: var(--r); padding: 14px 24px; min-width: 100px; text-align: center; }
+    .bcard .bnum { font-family: var(--H); font-size: 30px; font-weight: 700; line-height: 1; }
+    .bcard .blbl { font-size: 10px; text-transform: uppercase; letter-spacing: 2px; color: rgba(255,255,255,0.45); margin-top: 3px; }
+    .bcard.c .bnum { color: var(--correct); }
+    .bcard.w .bnum { color: var(--wrong); }
+
+    /* ─── Y/N BUTTONS (Dietary Dash) ─────────────────────────── */
+    .yn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .yn-btn {
+      border: 2px solid rgba(255,255,255,0.15); border-radius: var(--r); cursor: pointer;
+      font-family: var(--H); font-size: 28px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px;
+      padding: 32px 20px; display: flex; flex-direction: column; align-items: center; gap: 8px;
+      transition: all 0.2s; background: rgba(255,255,255,0.05);
+    }
+    .yn-btn span { font-size: 14px; letter-spacing: 2px; color: rgba(255,255,255,0.5); }
+    .yn-btn:hover:not(:disabled) { transform: translateY(-3px); box-shadow: var(--sh); }
+    .yn-btn.yes:hover:not(:disabled) { border-color: var(--correct); background: rgba(46,204,113,0.12); }
+    .yn-btn.no:hover:not(:disabled)  { border-color: var(--wrong);   background: rgba(231,76,60,0.12); }
+    .yn-btn.correct { border-color: var(--correct)!important; background: rgba(46,204,113,0.2)!important; color: var(--correct)!important; animation: pop .35s ease; }
+    .yn-btn.wrong   { border-color: var(--wrong)!important;   background: rgba(231,76,60,0.2)!important;  color: var(--wrong)!important;   animation: shake .35s ease; }
+    .yn-btn:disabled { cursor: not-allowed; }
+
+    /* ─── SPEED FLASH ────────────────────────────────────────── */
+    .flash-countdown { font-family: var(--H); font-size: 80px; font-weight: 700; color: var(--yellow); text-align: center; animation: count-pulse 1s ease infinite; }
+    @keyframes count-pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.7;transform:scale(.95)} }
+    .flash-img-wrap { width: 100%; max-width: 800px; margin: 0 auto; padding: 0 20px; }
+    .flash-img-box { width: 100%; aspect-ratio: 4/3; max-height: 380px; border-radius: var(--r); overflow: hidden; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); box-shadow: var(--sh2); position: relative; }
+    .flash-img-box img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .flash-timer-bar { height: 6px; background: var(--yellow); border-radius: 99px; transition: width linear; }
+    .flash-hidden-overlay { position: absolute; inset: 0; background: var(--navy2); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; border-radius: var(--r); }
+    .flash-hidden-overlay .icon { font-size: 48px; }
+    .flash-hidden-overlay .txt  { font-family: var(--H); font-size: 20px; text-transform: uppercase; letter-spacing: 3px; color: rgba(255,255,255,0.4); }
+
+    /* ─── DESCRIPTION MATCH ──────────────────────────────────── */
+    .desc-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: var(--r); padding: 28px 32px; font-size: clamp(15px,2.2vw,18px); color: rgba(255,255,255,0.82); line-height: 1.75; font-style: italic; text-align: center; position: relative; }
+    .desc-card::before { content: '"'; position: absolute; top: -10px; left: 20px; font-size: 80px; color: rgba(249,193,46,0.15); font-family: Georgia, serif; line-height: 1; }
+
+    /* ─── DIETARY TAGS ───────────────────────────────────────── */
+    .dietary-tag { display: inline-block; border-radius: 99px; padding: 4px 12px; font-family: var(--H); font-size: 11px; letter-spacing: 2px; text-transform: uppercase; margin: 2px; }
+    .tag-gf  { background: rgba(6,167,224,0.2);   border: 1px solid rgba(6,167,224,0.4);   color: var(--blue); }
+    .tag-v   { background: rgba(46,204,113,0.18);  border: 1px solid rgba(46,204,113,0.35); color: var(--correct); }
+    .tag-vg  { background: rgba(46,204,113,0.12);  border: 1px solid rgba(46,204,113,0.25); color: #7dcea0; }
+
+    /* ═══════════════════════════════════════════════════════════
+       HUB SCREEN
+    ═══════════════════════════════════════════════════════════ */
+    #screen-hub {
+      flex-direction: column; align-items: center; justify-content: flex-start;
+      padding: 60px 24px 80px;
+    }
+    .hub-header { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 20px; margin-bottom: 60px; }
+    .hub-logo { width: 100px; height: 100px; background: var(--yellow); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 12px rgba(249,193,46,0.12), 0 0 0 24px rgba(249,193,46,0.06); animation: glow 3s ease-in-out infinite; }
+    @keyframes glow { 0%,100%{box-shadow:0 0 0 12px rgba(249,193,46,0.12),0 0 0 24px rgba(249,193,46,0.06)} 50%{box-shadow:0 0 0 18px rgba(249,193,46,0.2),0 0 0 36px rgba(249,193,46,0.09)} }
+    .hub-logo svg { width: 58px; height: 58px; }
+    .hub-title { font-family: var(--H); font-size: clamp(32px,7vw,64px); font-weight: 700; text-transform: uppercase; line-height: 1; letter-spacing: 2px; }
+    .hub-title span { color: var(--yellow); }
+    .hub-sub { font-family: var(--H); font-size: clamp(13px,2.5vw,18px); color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 5px; }
+    .hub-desc { font-size: 15px; color: rgba(255,255,255,0.55); line-height: 1.7; max-width: 420px; text-align: center; }
+
+    /* Game cards grid */
+    .games-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; width: 100%; max-width: 1040px; }
+    .game-tile {
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px; padding: 36px 32px; cursor: pointer;
+      transition: all 0.25s; text-align: left; position: relative; overflow: hidden;
+      display: flex; flex-direction: column; gap: 16px;
+    }
+    .game-tile::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,0.04), transparent); opacity: 0; transition: opacity 0.25s; border-radius: 20px; }
+    .game-tile:hover { transform: translateY(-6px); box-shadow: var(--sh2); border-color: rgba(249,193,46,0.3); }
+    .game-tile:hover::before { opacity: 1; }
+    .game-tile.featured { border-color: rgba(249,193,46,0.25); background: rgba(249,193,46,0.06); }
+    .tile-icon { font-size: 48px; line-height: 1; }
+    .tile-num { position: absolute; top: 20px; right: 24px; font-family: var(--H); font-size: 48px; font-weight: 700; color: rgba(255,255,255,0.04); line-height: 1; }
+    .tile-label { font-family: var(--H); font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: rgba(249,193,46,0.7); margin-bottom: -8px; }
+    .tile-title { font-family: var(--H); font-size: 26px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--white); }
+    .tile-desc { font-size: 14px; color: rgba(255,255,255,0.55); line-height: 1.65; }
+    .tile-meta { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+    .tile-chip { background: rgba(255,255,255,0.08); border-radius: 99px; padding: 4px 12px; font-size: 11px; color: rgba(255,255,255,0.5); font-family: var(--H); letter-spacing: 1px; }
+    .tile-arrow { align-self: flex-start; margin-top: 8px; background: var(--yellow); color: var(--navy); border: none; font-family: var(--H); font-size: 13px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; padding: 10px 24px; border-radius: 4px; cursor: pointer; transition: all 0.18s; }
+    .game-tile:hover .tile-arrow { background: var(--yellow2); }
+
+    /* divider */
+    .hub-divider { width: 100%; max-width: 1040px; border: none; border-top: 1px solid rgba(255,255,255,0.07); margin: 16px 0; }
+
+    /* ─── WELCOME / CATEGORY SELECT (shared) ─────────────────── */
+    #screen-welcome, #screen-desc-welcome, #screen-flash-welcome, #screen-diet-welcome {
+      flex-direction: column; align-items: center; justify-content: center;
+      padding: 40px 20px; text-align: center; gap: 28px;
+    }
+    .wlc-title { font-family: var(--H); font-size: clamp(28px,6vw,56px); font-weight: 700; text-transform: uppercase; letter-spacing: 2px; line-height: 1; }
+    .wlc-title span { color: var(--yellow); }
+    .wlc-sub { font-family: var(--H); color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 4px; font-size: 14px; }
+    .wlc-desc { font-size: 15px; color: rgba(255,255,255,0.6); line-height: 1.7; max-width: 440px; }
+    .wlc-stats { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
+    .stat-c { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: var(--r); padding: 16px 24px; text-align: center; min-width: 100px; }
+    .stat-c .snum { font-family: var(--H); font-size: 32px; font-weight: 700; color: var(--yellow); line-height: 1; }
+    .stat-c .slbl { font-size: 10px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 2px; margin-top: 3px; }
+
+    /* Cat filter */
+    .cat-label { font-family: var(--H); font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.45); margin-bottom: 8px; display: block; }
+    .cat-btns { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 580px; }
+    .cat-b { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.14); color: rgba(255,255,255,0.65); font-family: var(--H); font-size: 12px; letter-spacing: 1px; text-transform: uppercase; padding: 7px 14px; border-radius: 99px; cursor: pointer; transition: all 0.18s; }
+    .cat-b:hover, .cat-b.on { background: var(--yellow); border-color: var(--yellow); color: var(--navy); }
+
+    /* ═══════════════════════════════════════════════════════════
+       DIETARY DASH — question question display
+    ═══════════════════════════════════════════════════════════ */
+    .diet-question { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: var(--r); padding: 24px 28px; text-align: center; }
+    .diet-dish-name { font-family: var(--H); font-size: clamp(22px,4vw,36px); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--white); margin-bottom: 8px; }
+    .diet-question-text { font-size: 15px; color: rgba(255,255,255,0.55); line-height: 1.5; }
+    .diet-claim { font-family: var(--H); font-size: clamp(18px,3vw,28px); font-weight: 500; text-transform: uppercase; letter-spacing: 1px; color: var(--yellow); margin-top: 12px; }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     HUB SCREEN
+═══════════════════════════════════════════════════════════════ -->
+<section id="screen-hub" class="screen active">
+  <div class="hub-header">
+    <div class="hub-logo" aria-hidden="true">
+      <svg viewBox="0 0 58 58" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="7" y="14" width="30" height="34" rx="3" fill="#182b54"/>
+        <ellipse cx="14" cy="14" rx="4" ry="3.5" fill="white" opacity="0.9"/>
+        <ellipse cx="22" cy="12" rx="5" ry="4.5" fill="white" opacity="0.95"/>
+        <ellipse cx="30" cy="14" rx="4" ry="3.5" fill="white" opacity="0.9"/>
+        <path d="M37 20 Q50 20 50 29 Q50 38 37 38" stroke="#182b54" stroke-width="5" fill="none" stroke-linecap="round"/>
+        <rect x="9" y="22" width="26" height="24" rx="2" fill="#f9c12e" opacity="0.92"/>
+        <circle cx="16" cy="30" r="2" fill="rgba(255,255,255,0.35)"/>
+        <circle cx="25" cy="35" r="1.5" fill="rgba(255,255,255,0.35)"/>
+        <circle cx="30" cy="28" r="1.3" fill="rgba(255,255,255,0.35)"/>
+      </svg>
+    </div>
+    <div class="badge">Staff Training Hub</div>
+    <div>
+      <h1 class="hub-title">Munich <span>Brauhaus</span></h1>
+      <p class="hub-sub" style="margin-top:6px;">Menu Training Games</p>
+    </div>
+    <p class="hub-desc">Master the menu through fun, interactive games. The more you play, the better you'll know every dish — Prost! 🍺</p>
+  </div>
+
+  <div class="games-grid">
+
+    <div class="game-tile featured" id="tile-quiz" onclick="startGame('quiz')" role="button" tabindex="0" aria-label="Photo Quiz game">
+      <div class="tile-num">01</div>
+      <div class="tile-icon">🖼️</div>
+      <div>
+        <div class="tile-label">Game 01</div>
+        <div class="tile-title">Photo Quiz</div>
+      </div>
+      <div class="tile-desc">A dish photo appears — can you identify it from 4 options? The classic menu training challenge.</div>
+      <div class="tile-meta">
+        <span class="tile-chip">📸 40 dishes</span>
+        <span class="tile-chip">4 options</span>
+        <span class="tile-chip">Filter by category</span>
+      </div>
+      <button class="tile-arrow" tabindex="-1">Play Now →</button>
+    </div>
+
+    <div class="game-tile" id="tile-flash" onclick="startGame('flash')" role="button" tabindex="0" aria-label="Speed Flash game">
+      <div class="tile-num">02</div>
+      <div class="tile-icon">⚡</div>
+      <div>
+        <div class="tile-label">Game 02</div>
+        <div class="tile-title">Speed Flash</div>
+      </div>
+      <div class="tile-desc">A dish photo flashes for just 3 seconds then disappears. Remember what you saw and pick the right answer!</div>
+      <div class="tile-meta">
+        <span class="tile-chip">⏱️ 3 sec flash</span>
+        <span class="tile-chip">Memory test</span>
+      </div>
+      <button class="tile-arrow" tabindex="-1">Play Now →</button>
+    </div>
+
+    <div class="game-tile" id="tile-desc" onclick="startGame('desc')" role="button" tabindex="0" aria-label="Description Match game">
+      <div class="tile-num">03</div>
+      <div class="tile-icon">📝</div>
+      <div>
+        <div class="tile-label">Game 03</div>
+        <div class="tile-title">Description Match</div>
+      </div>
+      <div class="tile-desc">Read the dish description — ingredients, cooking style, story. Then pick which dish it belongs to.</div>
+      <div class="tile-meta">
+        <span class="tile-chip">📖 Ingredients clues</span>
+        <span class="tile-chip">No photos</span>
+      </div>
+      <button class="tile-arrow" tabindex="-1">Play Now →</button>
+    </div>
+
+    <div class="game-tile" id="tile-diet" onclick="startGame('diet')" role="button" tabindex="0" aria-label="Dietary Dash game">
+      <div class="tile-num">04</div>
+      <div class="tile-icon">🌿</div>
+      <div>
+        <div class="tile-label">Game 04</div>
+        <div class="tile-title">Dietary Dash</div>
+      </div>
+      <div class="tile-desc">Is this dish Gluten Free, Vegetarian or Vegan? Answer Yes or No — essential knowledge for serving guests with dietary needs.</div>
+      <div class="tile-meta">
+        <span class="tile-chip">🌾 GF / GFO</span>
+        <span class="tile-chip">🥦 V / VG / VGO</span>
+      </div>
+      <button class="tile-arrow" tabindex="-1">Play Now →</button>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     GAME 1: PHOTO QUIZ — Welcome
+═══════════════════════════════════════════════════════════════ -->
+<section id="screen-welcome" class="screen">
+  <div class="wlc-title">Photo <span>Quiz</span></div>
+  <p class="wlc-sub">Game 01</p>
+  <p class="wlc-desc">A photo of a dish appears. Choose the correct name from 4 options. Filter by category to focus on specific sections.</p>
+  <div class="wlc-stats">
+    <div class="stat-c"><div class="snum" id="pq-count">40</div><div class="slbl">Dishes</div></div>
+    <div class="stat-c"><div class="snum">4</div><div class="slbl">Options</div></div>
+    <div class="stat-c"><div class="snum">7</div><div class="slbl">Categories</div></div>
+  </div>
+  <div>
+    <span class="cat-label">Filter by category</span>
+    <div class="cat-btns" id="pq-cats">
+      <button class="cat-b on" data-cat="all">All</button>
+      <button class="cat-b" data-cat="For the Table">For the Table</button>
+      <button class="cat-b" data-cat="Schnitzels">Schnitzels</button>
+      <button class="cat-b" data-cat="Biergarten Feast">Biergarten Feast</button>
+      <button class="cat-b" data-cat="We Don't Play Favourites But..">Favourites</button>
+      <button class="cat-b" data-cat="The Forest Is Calling">The Forest</button>
+      <button class="cat-b" data-cat="Sides">Sides</button>
+      <button class="cat-b" data-cat="Sweet Treats">Sweet Treats</button>
+    </div>
+  </div>
+  <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center">
+    <button class="btn-ghost" onclick="goHub()">← Back</button>
+    <button class="btn-primary" id="pq-start">🍺 Start Quiz</button>
+  </div>
+</section>
+
+<!-- Photo Quiz — Playing -->
+<section id="screen-pq" class="screen" style="flex-direction:column">
+  <nav class="topbar">
+    <div class="topbar-logo" onclick="goHub()">Munich <span>Brauhaus</span></div>
+    <div class="progress-wrap">
+      <div class="progress-info"><span>Q <b id="pq-cur">1</b> / <b id="pq-tot">10</b></span><span id="pq-pct">0%</span></div>
+      <div class="progress-track"><div class="progress-fill" id="pq-bar" style="width:0%"></div></div>
+    </div>
+    <div class="score-pill">Score <b id="pq-score">0</b></div>
+  </nav>
+  <div class="game-card">
+    <span class="cat-tag" id="pq-cat">Category</span>
+    <h2 class="q-label">What dish is this?</h2>
+    <div class="img-frame" id="pq-frame">
+      <div class="img-shimmer"></div>
+      <img id="pq-img" src="" alt="Identify this dish"/>
+    </div>
+    <div class="opts-grid" id="pq-opts"></div>
+    <div class="feedback" id="pq-fb">
+      <div class="feedback-icon" id="pq-fb-icon"></div>
+      <div><div class="feedback-title" id="pq-fb-title"></div><div class="feedback-desc" id="pq-fb-desc"></div></div>
+    </div>
+    <button class="btn-next" id="pq-next">Next <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  </div>
+</section>
+
+<!-- Photo Quiz — Results -->
+<section id="screen-pq-res" class="screen"><div class="results-wrap">
+  <div class="res-emoji" id="pq-res-emoji">🏆</div>
+  <h2 class="res-title"><span id="pq-res-grade">Well Done!</span></h2>
+  <div class="ring-wrap" aria-hidden="true">
+    <svg viewBox="0 0 160 160"><circle class="ring-bg" cx="80" cy="80" r="68"/><circle class="ring-fill" id="pq-ring" cx="80" cy="80" r="68" stroke-dasharray="427.26" stroke-dashoffset="427.26"/></svg>
+    <div class="ring-txt"><div class="big" id="pq-res-score">0/0</div><div class="small">correct</div></div>
+  </div>
+  <p class="res-msg" id="pq-res-msg"></p>
+  <div class="breakdown">
+    <div class="bcard c"><div class="bnum" id="pq-r-c">0</div><div class="blbl">✓ Correct</div></div>
+    <div class="bcard w"><div class="bnum" id="pq-r-w">0</div><div class="blbl">✗ Wrong</div></div>
+    <div class="bcard"><div class="bnum" id="pq-r-p" style="color:var(--yellow)">0%</div><div class="blbl">Accuracy</div></div>
+  </div>
+  <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center">
+    <button class="btn-ghost" onclick="goHub()">← Hub</button>
+    <button class="btn-ghost" onclick="showScreen('screen-welcome')">Change Category</button>
+    <button class="btn-primary" id="pq-retry">🔄 Try Again</button>
+  </div>
+</div></section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     GAME 2: SPEED FLASH — Welcome
+═══════════════════════════════════════════════════════════════ -->
+<section id="screen-flash-welcome" class="screen">
+  <div class="wlc-title">Speed <span>Flash</span></div>
+  <p class="wlc-sub">Game 02</p>
+  <p class="wlc-desc">A dish photo will flash for <strong style="color:var(--yellow)">3 seconds</strong> then disappear. Memorise it, then pick the correct name from 4 options. Can you beat the flash?</p>
+  <div class="wlc-stats">
+    <div class="stat-c"><div class="snum">3s</div><div class="slbl">Flash time</div></div>
+    <div class="stat-c"><div class="snum" id="fl-count">40</div><div class="slbl">Rounds</div></div>
+    <div class="stat-c"><div class="snum">4</div><div class="slbl">Options</div></div>
+  </div>
+  <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center">
+    <button class="btn-ghost" onclick="goHub()">← Back</button>
+    <button class="btn-primary" id="fl-start">⚡ Start Flash</button>
+  </div>
+</section>
+
+<!-- Speed Flash — Playing -->
+<section id="screen-fl" class="screen" style="flex-direction:column">
+  <nav class="topbar">
+    <div class="topbar-logo" onclick="goHub()">Munich <span>Brauhaus</span></div>
+    <div class="progress-wrap">
+      <div class="progress-info"><span>Q <b id="fl-cur">1</b> / <b id="fl-tot">10</b></span><span id="fl-pct">0%</span></div>
+      <div class="progress-track"><div class="progress-fill" id="fl-bar" style="width:0%"></div></div>
+    </div>
+    <div class="score-pill">Score <b id="fl-score">0</b></div>
+  </nav>
+  <div class="game-card">
+    <span class="cat-tag" id="fl-cat">Category</span>
+
+    <!-- Flash phase -->
+    <div id="fl-phase-flash" style="display:flex;flex-direction:column;gap:12px">
+      <h2 class="q-label">⚡ Memorise this dish!</h2>
+      <div style="height:4px;background:rgba(255,255,255,0.1);border-radius:99px;overflow:hidden">
+        <div id="fl-timer-bar" class="flash-timer-bar" style="width:100%"></div>
+      </div>
+      <div class="flash-img-box" id="fl-img-box">
+        <img id="fl-img" src="" alt="Memorise this dish"/>
+      </div>
+    </div>
+
+    <!-- Answer phase -->
+    <div id="fl-phase-answer" style="display:none;flex-direction:column;gap:20px">
+      <div class="flash-img-box" style="aspect-ratio:4/3;max-height:280px">
+        <div class="flash-hidden-overlay">
+          <div class="icon">🤔</div>
+          <div class="txt">What was that dish?</div>
+        </div>
+      </div>
+      <div class="opts-grid" id="fl-opts"></div>
+      <div class="feedback" id="fl-fb">
+        <div class="feedback-icon" id="fl-fb-icon"></div>
+        <div><div class="feedback-title" id="fl-fb-title"></div><div class="feedback-desc" id="fl-fb-desc"></div></div>
+      </div>
+      <button class="btn-next" id="fl-next">Next <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    </div>
+  </div>
+</section>
+
+<!-- Speed Flash — Results -->
+<section id="screen-fl-res" class="screen"><div class="results-wrap">
+  <div class="res-emoji" id="fl-res-emoji">⚡</div>
+  <h2 class="res-title"><span id="fl-res-grade">Flash Master!</span></h2>
+  <div class="ring-wrap" aria-hidden="true">
+    <svg viewBox="0 0 160 160"><circle class="ring-bg" cx="80" cy="80" r="68"/><circle class="ring-fill" id="fl-ring" cx="80" cy="80" r="68" stroke-dasharray="427.26" stroke-dashoffset="427.26"/></svg>
+    <div class="ring-txt"><div class="big" id="fl-res-score">0/0</div><div class="small">correct</div></div>
+  </div>
+  <p class="res-msg" id="fl-res-msg"></p>
+  <div class="breakdown">
+    <div class="bcard c"><div class="bnum" id="fl-r-c">0</div><div class="blbl">✓ Correct</div></div>
+    <div class="bcard w"><div class="bnum" id="fl-r-w">0</div><div class="blbl">✗ Wrong</div></div>
+    <div class="bcard"><div class="bnum" id="fl-r-p" style="color:var(--yellow)">0%</div><div class="blbl">Accuracy</div></div>
+  </div>
+  <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center">
+    <button class="btn-ghost" onclick="goHub()">← Hub</button>
+    <button class="btn-primary" id="fl-retry">⚡ Flash Again</button>
+  </div>
+</div></section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     GAME 3: DESCRIPTION MATCH — Welcome
+═══════════════════════════════════════════════════════════════ -->
+<section id="screen-desc-welcome" class="screen">
+  <div class="wlc-title">Description <span>Match</span></div>
+  <p class="wlc-sub">Game 03</p>
+  <p class="wlc-desc">Read the dish description — ingredients, cooking style, flavours. Then pick which dish it's describing from 4 options. No photos, just your menu knowledge!</p>
+  <div class="wlc-stats">
+    <div class="stat-c"><div class="snum" id="dm-count">40</div><div class="slbl">Dishes</div></div>
+    <div class="stat-c"><div class="snum">4</div><div class="slbl">Options</div></div>
+    <div class="stat-c"><div class="snum">📖</div><div class="slbl">Text only</div></div>
+  </div>
+  <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center">
+    <button class="btn-ghost" onclick="goHub()">← Back</button>
+    <button class="btn-primary" id="dm-start">📝 Start Matching</button>
+  </div>
+</section>
+
+<!-- Description Match — Playing -->
+<section id="screen-dm" class="screen" style="flex-direction:column">
+  <nav class="topbar">
+    <div class="topbar-logo" onclick="goHub()">Munich <span>Brauhaus</span></div>
+    <div class="progress-wrap">
+      <div class="progress-info"><span>Q <b id="dm-cur">1</b> / <b id="dm-tot">10</b></span><span id="dm-pct">0%</span></div>
+      <div class="progress-track"><div class="progress-fill" id="dm-bar" style="width:0%"></div></div>
+    </div>
+    <div class="score-pill">Score <b id="dm-score">0</b></div>
+  </nav>
+  <div class="game-card">
+    <span class="cat-tag" id="dm-cat">Category</span>
+    <h2 class="q-label">Which dish is being described?</h2>
+    <div class="desc-card" id="dm-desc">Loading description…</div>
+    <div class="opts-grid" id="dm-opts"></div>
+    <div class="feedback" id="dm-fb">
+      <div class="feedback-icon" id="dm-fb-icon"></div>
+      <div><div class="feedback-title" id="dm-fb-title"></div><div class="feedback-desc" id="dm-fb-desc"></div></div>
+    </div>
+    <button class="btn-next" id="dm-next">Next <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  </div>
+</section>
+
+<!-- Description Match — Results -->
+<section id="screen-dm-res" class="screen"><div class="results-wrap">
+  <div class="res-emoji" id="dm-res-emoji">📝</div>
+  <h2 class="res-title"><span id="dm-res-grade">Word Smith!</span></h2>
+  <div class="ring-wrap" aria-hidden="true">
+    <svg viewBox="0 0 160 160"><circle class="ring-bg" cx="80" cy="80" r="68"/><circle class="ring-fill" id="dm-ring" cx="80" cy="80" r="68" stroke-dasharray="427.26" stroke-dashoffset="427.26"/></svg>
+    <div class="ring-txt"><div class="big" id="dm-res-score">0/0</div><div class="small">correct</div></div>
+  </div>
+  <p class="res-msg" id="dm-res-msg"></p>
+  <div class="breakdown">
+    <div class="bcard c"><div class="bnum" id="dm-r-c">0</div><div class="blbl">✓ Correct</div></div>
+    <div class="bcard w"><div class="bnum" id="dm-r-w">0</div><div class="blbl">✗ Wrong</div></div>
+    <div class="bcard"><div class="bnum" id="dm-r-p" style="color:var(--yellow)">0%</div><div class="blbl">Accuracy</div></div>
+  </div>
+  <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center">
+    <button class="btn-ghost" onclick="goHub()">← Hub</button>
+    <button class="btn-primary" id="dm-retry">📝 Try Again</button>
+  </div>
+</div></section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     GAME 4: DIETARY DASH — Welcome
+═══════════════════════════════════════════════════════════════ -->
+<section id="screen-diet-welcome" class="screen">
+  <div class="wlc-title">Dietary <span>Dash</span></div>
+  <p class="wlc-sub">Game 04</p>
+  <p class="wlc-desc">A dish name appears along with a dietary claim (GF, Vegetarian, or Vegan). Answer <strong style="color:var(--correct)">Yes</strong> or <strong style="color:var(--wrong)">No</strong>. Critical knowledge for looking after guests with dietary requirements!</p>
+  <div class="wlc-stats">
+    <div class="stat-c"><div class="snum">🌾</div><div class="slbl">GF / GFO</div></div>
+    <div class="stat-c"><div class="snum">🥦</div><div class="slbl">V / VG</div></div>
+    <div class="stat-c"><div class="snum">✅</div><div class="slbl">Yes or No</div></div>
+  </div>
+  <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center">
+    <button class="btn-ghost" onclick="goHub()">← Back</button>
+    <button class="btn-primary" id="dd-start">🌿 Start Dash</button>
+  </div>
+</section>
+
+<!-- Dietary Dash — Playing -->
+<section id="screen-dd" class="screen" style="flex-direction:column">
+  <nav class="topbar">
+    <div class="topbar-logo" onclick="goHub()">Munich <span>Brauhaus</span></div>
+    <div class="progress-wrap">
+      <div class="progress-info"><span>Q <b id="dd-cur">1</b> / <b id="dd-tot">20</b></span><span id="dd-pct">0%</span></div>
+      <div class="progress-track"><div class="progress-fill" id="dd-bar" style="width:0%"></div></div>
+    </div>
+    <div class="score-pill">Score <b id="dd-score">0</b></div>
+  </nav>
+  <div class="game-card">
+    <div class="diet-question">
+      <div class="diet-dish-name" id="dd-dish">Haus Pretzel</div>
+      <div class="diet-question-text">Is this dish…</div>
+      <div class="diet-claim" id="dd-claim">GLUTEN FREE?</div>
+    </div>
+    <div class="yn-grid">
+      <button class="yn-btn yes" id="dd-yes" onclick="handleDiet(true)">YES<span>It qualifies</span></button>
+      <button class="yn-btn no"  id="dd-no"  onclick="handleDiet(false)">NO<span>It does not</span></button>
+    </div>
+    <div class="feedback" id="dd-fb">
+      <div class="feedback-icon" id="dd-fb-icon"></div>
+      <div><div class="feedback-title" id="dd-fb-title"></div><div class="feedback-desc" id="dd-fb-desc"></div></div>
+    </div>
+    <button class="btn-next" id="dd-next">Next <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  </div>
+</section>
+
+<!-- Dietary Dash — Results -->
+<section id="screen-dd-res" class="screen"><div class="results-wrap">
+  <div class="res-emoji" id="dd-res-emoji">🌿</div>
+  <h2 class="res-title"><span id="dd-res-grade">Diet Expert!</span></h2>
+  <div class="ring-wrap" aria-hidden="true">
+    <svg viewBox="0 0 160 160"><circle class="ring-bg" cx="80" cy="80" r="68"/><circle class="ring-fill" id="dd-ring" cx="80" cy="80" r="68" stroke-dasharray="427.26" stroke-dashoffset="427.26"/></svg>
+    <div class="ring-txt"><div class="big" id="dd-res-score">0/0</div><div class="small">correct</div></div>
+  </div>
+  <p class="res-msg" id="dd-res-msg"></p>
+  <div class="breakdown">
+    <div class="bcard c"><div class="bnum" id="dd-r-c">0</div><div class="blbl">✓ Correct</div></div>
+    <div class="bcard w"><div class="bnum" id="dd-r-w">0</div><div class="blbl">✗ Wrong</div></div>
+    <div class="bcard"><div class="bnum" id="dd-r-p" style="color:var(--yellow)">0%</div><div class="blbl">Accuracy</div></div>
+  </div>
+  <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center">
+    <button class="btn-ghost" onclick="goHub()">← Hub</button>
+    <button class="btn-primary" id="dd-retry">🌿 Dash Again</button>
+  </div>
+</div></section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════════════════════════ -->
+<script>
+const BASE = 'menu images/';
+
+// ─── FULL MENU DATA ──────────────────────────────────────────────
+const MENU = [
+  // FOR THE TABLE
+  { name:"Aufschnitt Teller",           cat:"For the Table",                img:BASE+"for the table/AUFSCHNITT TELLER.avif",           desc:"German ploughman's platter: Prager ham, lyoner, brie cheese, liverwurst, German mustard, pickles, radish and rye bread",            gf:true,  gfo:false, v:false, vg:false },
+  { name:"Bier Mussels",                cat:"For the Table",                img:BASE+"for the table/BIER MUSSELS.avif",                desc:"Grünlipp mussels simmered in a spicy tomato & bier sauce, served with toasted rye bread",                                           gf:false, gfo:false, v:false, vg:false },
+  { name:"Calamari",                    cat:"For the Table",                img:BASE+"for the table/CALAMARI .avif",                   desc:"Tender calamari with lime, fresh parsley, garlic, chilli and aioli",                                                                gf:false, gfo:false, v:false, vg:false },
+  { name:"Cheesy Jalapeño Pretzel",     cat:"For the Table",                img:BASE+"for the table/CHEESY JALAPENO PRETZEL.avif",     desc:"A spicy, cheesy twist on the classic pretzel — loaded with melted cheese and jalapeño for a fiery kick",                             gf:false, gfo:false, v:true,  vg:false },
+  { name:"Haus Pretzel",                cat:"For the Table",                img:BASE+"for the table/HAUS PRETZEL.avif",               desc:"Traditional salted Bavarian pretzel served warm with salted butter",                                                                 gf:false, gfo:false, v:true,  vg:false },
+  { name:"Mac & Cheese Croquettes",     cat:"For the Table",                img:BASE+"for the table/MAC & CHEESE CROQUETTES.avif",     desc:"Golden, crispy croquettes stuffed with mac & cheese, served with smoked bacon and blue cheese mayo",                                  gf:false, gfo:false, v:false, vg:false },
+  { name:"Oma's Favourite Goulash Soup",cat:"For the Table",                img:BASE+"for the table/OMA'S FAVOURITE GOULASH SOUP.avif",desc:"Slow cooked beef goulash with pepper and sour cream, served with toasted rye bread — just like Oma used to make",                    gf:false, gfo:false, v:false, vg:false },
+  // SCHNITZELS
+  { name:"Cordon Bleu",                 cat:"Schnitzels",                   img:BASE+"Schnitzels/CORDON BLEU.avif",                   desc:"Golden crumbed chicken breast filled with Swiss cheese, mozzarella and smoked ham — a rich, indulgent classic",                        gf:false, gfo:false, v:false, vg:false },
+  { name:"Jäger Schnitzel",             cat:"Schnitzels",                   img:BASE+"Schnitzels/JÄGER SCHNITZEL.avif",               desc:"Golden crumbed chicken schnitzel topped with a rich mushroom sauce, served with cabbage slaw",                                         gf:false, gfo:false, v:false, vg:false },
+  { name:"Naked Schnitzel",             cat:"Schnitzels",                   img:BASE+"Schnitzels/NAKED SCHNITZEL.avif",               desc:"Grilled chicken breast with haus-made garlic butter and wilted greens — light, healthy and gluten free option available",               gf:false, gfo:true,  v:false, vg:false },
+  { name:"Paprikaschnitzel",            cat:"Schnitzels",                   img:BASE+"Schnitzels/PAPRIKASCHNITZEL.avif",              desc:"Golden crumbed pork schnitzel smothered in a vibrant tomato and bell pepper sauce — a Bavarian favourite",                              gf:false, gfo:false, v:false, vg:false },
+  { name:"Parmi",                       cat:"Schnitzels",                   img:BASE+"Schnitzels/PARMI.avif",                         desc:"Golden crumbed chicken topped with Prager ham, melted mozzarella and napolitana sauce — the Munich twist on an Aussie classic",         gf:false, gfo:false, v:false, vg:false },
+  { name:"Schweine-Schnitzel",          cat:"Schnitzels",                   img:BASE+"Schnitzels/SCHWEINE-SCHNITZEL.avif",            desc:"Golden crumbed pork schnitzel served with apple and cabbage slaw — a traditional German combination",                                   gf:false, gfo:false, v:false, vg:false },
+  { name:"Wannabe a Schnitzel",         cat:"Schnitzels",                   img:BASE+"Schnitzels/WANNABE A SCHNITZEL.avif",           desc:"Plant-based schnitzel served with mixed leaf salad, sundried tomatoes and balsamic glaze — vegan and delicious",                        gf:false, gfo:false, v:true,  vg:true  },
+  // BIERGARTEN FEAST
+  { name:"Biergarten Platter",          cat:"Biergarten Feast",             img:BASE+"Biergarten Feast/BIERGARTEN PLATTER.avif",      desc:"A feast for two or more: Bier Mussels, Grilled Top Sirloin, Chicken Schnitzel, Pork Belly and Smoked Kielbasa with cabbage slaw, corn, fries and mash", gf:false, gfo:true, v:false, vg:false },
+  { name:"Munich Platter",              cat:"Biergarten Feast",             img:BASE+"Biergarten Feast/MUNICH PLATTER.avif",          desc:"The ultimate Bavarian feast: crackling pork belly, famous crispy whole pork knuckle, frankfurter, nürnberger, thuringer, chicken schnitzel and all the sides", gf:false, gfo:true, v:false, vg:false },
+  { name:"Schnitty Platter",            cat:"Biergarten Feast",             img:BASE+"Biergarten Feast/SCHNITTY PLATTER.avif",        desc:"All your favourite schnitzels on one epic platter — Parmi, Jäger and BBQ served with a bowl of fries and mushroom sauce",               gf:false, gfo:false, v:false, vg:false },
+  { name:"Tasting Platter",             cat:"Biergarten Feast",             img:BASE+"Biergarten Feast/TASTING PLATTER.avif",         desc:"The big Bavarian in you: crackling pork belly, frankfurter, kielbasa, cheese kransky, chicken schnitzel with sauerkraut, red cabbage, creamy mash, apple compote and bier jus", gf:false, gfo:true, v:false, vg:false },
+  { name:"The Best Wurst Platter",      cat:"Biergarten Feast",             img:BASE+"Biergarten Feast/THE BEST WURST PLATTER.avif",  desc:"A celebration of German sausages: cheese kransky, frankfurter, thuringer and pinwheel nürnberger with creamy mash, red cabbage, sauerkraut, German mustard and bier jus", gf:false, gfo:true, v:false, vg:false },
+  // FAVOURITES
+  { name:"Crackling Pork Belly",        cat:"We Don't Play Favourites But..",img:BASE+"We Don't Play Favourites But../CRACKLING PORK BELLY.avif",     desc:"Perfectly crackling pork belly served with braised red cabbage, creamy mash, apple compote and rich bier jus",                           gf:false, gfo:true,  v:false, vg:false },
+  { name:"Famous Crispy Pork Knuckle",  cat:"We Don't Play Favourites But..",img:BASE+"We Don't Play Favourites But../FAMOUS CRISPY PORK KNUCKLE.jpeg",desc:"Our legendary crispy whole pork knuckle — golden on the outside, tender within — served with creamy mash, sauerkraut, bier jus and apple compote", gf:false, gfo:true, v:false, vg:false },
+  { name:"Käsespätzle",                 cat:"We Don't Play Favourites But..",img:BASE+"We Don't Play Favourites But../KÄSESPÄTZLE.avif",              desc:"Traditional German egg pasta baked with gruyère and Swiss cheese sauce, topped with röstzwiebeln (caramelised onions) and fresh chives — you'll never eat mac'n'cheese again", gf:false, gfo:false, v:true, vg:false },
+  { name:"Knödel in a Pot",             cat:"We Don't Play Favourites But..",img:BASE+"We Don't Play Favourites But../KNÖDEL IN A POT.avif",           desc:"Alpine bread dumplings — 'Hell Yes' from the mountains — served in a rich and creamy Swiss brown mushroom ragout",                         gf:false, gfo:false, v:true,  vg:false },
+  { name:"Market Fish",                 cat:"We Don't Play Favourites But..",img:BASE+"We Don't Play Favourites But../MARKET FISH.avif",               desc:"Grilled market fish served with Kartoffelgratin, fennel and watercress salad, finished with a delicate caper cream sauce",                  gf:false, gfo:true,  v:false, vg:false },
+  { name:"Top Sirloin Steak",           cat:"We Don't Play Favourites But..",img:BASE+"We Don't Play Favourites But../TOP SIRLOIN STEAK.avif",         desc:"250g grilled top sirloin steak served with röstzwiebeln, thyme roast potatoes and haus-made garlic butter",                               gf:false, gfo:true,  v:false, vg:false },
+  // FOREST
+  { name:"Apple and Beet Salad",        cat:"The Forest Is Calling",         img:BASE+"The Forest Is Calling/APPLE AND BEET SALAD.avif",desc:"Mesclun lettuce, green apple, beetroot, olives, fennel, herbed ricotta and feta, almond flakes with citrus dressing — vegetarian and vegan option available", gf:true, gfo:false, v:true, vg:true },
+  { name:"Haus Salad",                  cat:"The Forest Is Calling",         img:BASE+"The Forest Is Calling/HAUS SALAD.avif",          desc:"Cos lettuce, crispy bacon, garlic croutons, blanched tomato and parmesan snow with ranch and tomato dressing — the house favourite salad",  gf:false, gfo:true, v:false, vg:false },
+  // SIDES
+  { name:"Creamy Mash",                 cat:"Sides",                         img:BASE+"Sides/CREAMY MASH.avif",           desc:"Silky smooth creamy mashed potatoes — gluten free and vegetarian, the perfect companion to any main",                                    gf:true,  gfo:false, v:true,  vg:false },
+  { name:"Forest Salad",                cat:"Sides",                         img:BASE+"Sides/FOREST SALAD.avif",          desc:"Mixed leaf salad with sundried tomatoes, onion and mustard dressing — gluten free and vegan",                                           gf:true,  gfo:false, v:true,  vg:true  },
+  { name:"Kartoffelgratin",             cat:"Sides",                         img:BASE+"Sides/KARTOFFELGRATIN.avif",       desc:"Traditional potato gratin baked in a rich, creamy sauce — the ultimate comfort side dish, vegetarian",                                  gf:false, gfo:false, v:true,  vg:false },
+  { name:"Potato Cucumber Salad",       cat:"Sides",                         img:BASE+"Sides/POTATO CUCUMBER SALAD.avif", desc:"Classic German-style potato and cucumber salad — gluten free and vegan",                                                               gf:true,  gfo:false, v:true,  vg:true  },
+  { name:"Red Cabbage",                 cat:"Sides",                         img:BASE+"Sides/RED CABBAGE.avif",           desc:"Braised red cabbage slow-cooked with apple — a classic Bavarian side, gluten free and vegetarian",                                     gf:true,  gfo:false, v:true,  vg:false },
+  { name:"Sauerkraut",                  cat:"Sides",                         img:BASE+"Sides/SAUERKRAUT.avif",            desc:"Fermented cabbage with carraway seed — a quintessential German staple, gluten free and vegan",                                          gf:true,  gfo:false, v:true,  vg:true  },
+  { name:"Spätzle",                     cat:"Sides",                         img:BASE+"Sides/SPÄTZLE.avif",               desc:"Traditional German egg pasta — soft, pillowy and hearty, the classic accompaniment to rich Bavarian sauces",                             gf:false, gfo:false, v:true,  vg:false },
+  { name:"Wilted Greens",               cat:"Sides",                         img:BASE+"Sides/WILTED GREENS.avif",         desc:"Buttered kale, green beans and peas — gluten free and vegetarian, with a vegan option",                                                 gf:true,  gfo:false, v:true,  vg:false },
+  // SWEET TREATS
+  { name:"Apple Strudel",               cat:"Sweet Treats",                  img:BASE+"Sweet Treats/APPLE STRUDEL.avif",  desc:"The classic Austrian dessert: spiced apple and walnut wrapped in flaky pastry, served with vanilla ice cream. Apple. Strudel. Just better.", gf:false, gfo:false, v:true, vg:false },
+  { name:"Heiße Liebe",                 cat:"Sweet Treats",                  img:BASE+"Sweet Treats/HEIßE LIEBE.avif",   desc:"'Hot Love' — vanilla ice cream drowned in hot raspberry sauce and topped with wafer sticks. Simple, indulgent and delicious",            gf:true,  gfo:false, v:true,  vg:false },
+  { name:"Kaiserschmarrn",              cat:"Sweet Treats",                  img:BASE+"Sweet Treats/KAISERSCHMARRN.avif", desc:"Caramelised fluffy torn pancake with rum-soaked raisins, almonds, raspberry compote and apple sauce — the Emperor's dessert",            gf:false, gfo:false, v:true,  vg:false },
+  { name:"Krapen",                      cat:"Sweet Treats",                  img:BASE+"Sweet Treats/KRAPEN.avif",         desc:"A chocolate-stuffed doughnut dusted with cinnamon sugar, served with a side of mixed berries — irresistible",                           gf:false, gfo:false, v:true,  vg:false },
+];
+
+// ─── DIETARY QUESTIONS POOL ──────────────────────────────────────
+function buildDietPool() {
+  const pool = [];
+  MENU.forEach(item => {
+    pool.push({ dish: item.name, cat: item.cat, claim: 'Gluten Free (GF)', answer: item.gf,  hint: item.gf  ? `${item.name} is labelled GF on the menu.`  : `${item.name} is NOT gluten free — it's not labelled GF. ${item.gfo ? '(GFO option exists though!)' : ''}` });
+    pool.push({ dish: item.name, cat: item.cat, claim: 'Gluten Free Option (GFO)', answer: item.gf || item.gfo, hint: (item.gf||item.gfo) ? `${item.name} has a GF or GFO option available.` : `${item.name} does not have a gluten free option.` });
+    pool.push({ dish: item.name, cat: item.cat, claim: 'Vegetarian (V)', answer: item.v || item.vg, hint: (item.v||item.vg) ? `${item.name} is vegetarian or vegan.` : `${item.name} is not vegetarian — it contains meat or seafood.` });
+    pool.push({ dish: item.name, cat: item.cat, claim: 'Vegan (VG)', answer: item.vg, hint: item.vg ? `${item.name} is vegan on the menu.` : `${item.name} is not vegan.` });
+  });
+  return pool;
+}
+
+// ─── UTILS ──────────────────────────────────────────────────────
+function shuffle(arr) {
+  const a=[...arr];
+  for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+  return a;
+}
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+function goHub() { showScreen('screen-hub'); }
+
+function buildRing(ringId, pct) {
+  const circ = 427.26;
+  const ring  = document.getElementById(ringId);
+  ring.style.strokeDasharray  = circ;
+  ring.style.strokeDashoffset = circ;
+  setTimeout(()=>{ ring.style.strokeDashoffset = circ*(1-pct/100); },300);
+  ring.style.stroke = pct>=80?'#2ecc71':pct>=60?'#f9c12e':'#e74c3c';
+}
+
+const PRAISE = ['Wunderbar!','Perfekt!','Ausgezeichnet!','Ja! Correct!','Prost! Right!','Genau!','Richtig!'];
+function praise(){ return PRAISE[Math.floor(Math.random()*PRAISE.length)]; }
+
+function resultMsg(pct, gameLabel) {
+  if(pct===100) return `Flawless! 100% on ${gameLabel}! You're an absolute Munich Brauhaus pro. Prost! 🍺`;
+  if(pct>=80)  return `Wunderbar! You clearly know this menu inside out. The guests are in great hands!`;
+  if(pct>=60)  return `Gut gemacht! Good effort — review the gaps and come back for another round.`;
+  if(pct>=40)  return `Keep practising! Study the menu a bit more and you'll nail it next time.`;
+  return `Zeit zum Lernen! (Time to study!) Don't worry — play again and you'll improve!`;
+}
+function resultGrade(pct) {
+  if(pct===100) return ['🏆','Champion!'];
+  if(pct>=80)  return ['🌟','Wunderbar!'];
+  if(pct>=60)  return ['👍','Gut gemacht!'];
+  if(pct>=40)  return ['🍺','Keep Going!'];
+  return ['📚','Study Time!'];
+}
+
+function buildOpts(grid, options, correct, onAnswer, descForFeedback) {
+  grid.innerHTML='';
+  const ltrs=['A','B','C','D'];
+  options.forEach((opt,i)=>{
+    const btn=document.createElement('button');
+    btn.className='opt';
+    btn.id=`opt-${i}`;
+    btn.innerHTML=`<span class="opt-ltr">${ltrs[i]}</span><span>${opt}</span>`;
+    btn.addEventListener('click',()=>{
+      if(grid.dataset.answered==='1') return;
+      grid.dataset.answered='1';
+      onAnswer(opt,correct,descForFeedback);
+    });
+    grid.appendChild(btn);
+  });
+  grid.dataset.answered='0';
+}
+
+function markOpts(grid, chosen, correct) {
+  grid.querySelectorAll('.opt').forEach(btn=>{
+    btn.disabled=true;
+    const lbl=btn.querySelector('span:last-child').textContent;
+    if(lbl===correct)     btn.classList.add('correct');
+    else if(lbl===chosen) btn.classList.add('wrong');
+    else                  btn.classList.add('dimmed');
+  });
+}
+
+function showFeedback(fbId, iconId, titleId, descId, correct, extraDesc) {
+  const fb=document.getElementById(fbId);
+  fb.className='feedback '+(correct?'ok':'bad')+' show';
+  document.getElementById(iconId).textContent  = correct?'✅':'❌';
+  document.getElementById(titleId).textContent = correct ? praise() : 'Not quite!';
+  document.getElementById(descId).textContent  = extraDesc||'';
+}
+
+function updateProgress(curId,totId,pctId,barId,current,total){
+  const pct=Math.round((current/total)*100);
+  document.getElementById(curId).textContent=current+1;
+  document.getElementById(totId).textContent=total;
+  document.getElementById(pctId).textContent=pct+'%';
+  document.getElementById(barId).style.width=pct+'%';
+}
+
+// ─── GAME START ROUTING ──────────────────────────────────────────
+function startGame(game){
+  if(game==='quiz')  showScreen('screen-welcome');
+  if(game==='flash') { showScreen('screen-flash-welcome'); }
+  if(game==='desc')  { showScreen('screen-desc-welcome'); }
+  if(game==='diet')  { showScreen('screen-diet-welcome'); }
+}
+
+// keyboard for hub
+document.querySelectorAll('.game-tile').forEach(t=>{
+  t.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' ') t.click(); });
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   GAME 1: PHOTO QUIZ
+═══════════════════════════════════════════════════════════════ */
+let pqItems=[], pqIdx=0, pqScore=0, pqCat='all', pqAnswered=false;
+
+document.querySelectorAll('#pq-cats .cat-b').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('#pq-cats .cat-b').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    pqCat=b.dataset.cat;
+    const n=(pqCat==='all'?MENU:MENU.filter(i=>i.cat===pqCat)).length;
+    document.getElementById('pq-count').textContent=n;
+  });
+});
+
+document.getElementById('pq-start').addEventListener('click',()=>{
+  const pool=pqCat==='all'?[...MENU]:MENU.filter(i=>i.cat===pqCat);
+  if(!pool.length) return;
+  pqItems=shuffle(pool).map(item=>{
+    const wrong=shuffle(MENU.filter(x=>x.name!==item.name)).slice(0,3).map(x=>x.name);
+    return {...item, opts:shuffle([item.name,...wrong])};
+  });
+  pqIdx=0; pqScore=0;
+  document.getElementById('pq-score').textContent=0;
+  showScreen('screen-pq');
+  pqRender();
+});
+document.getElementById('pq-retry').addEventListener('click',()=>document.getElementById('pq-start').click());
+
+function pqRender(){
+  pqAnswered=false;
+  const q=pqItems[pqIdx];
+  updateProgress('pq-cur','pq-tot','pq-pct','pq-bar',pqIdx,pqItems.length);
+  document.getElementById('pq-cat').textContent=q.cat;
+  const frame=document.getElementById('pq-frame'), img=document.getElementById('pq-img');
+  frame.classList.remove('loaded');
+  img.onload=()=>frame.classList.add('loaded');
+  img.onerror=()=>frame.classList.add('loaded');
+  img.src=q.img;
+  buildOpts(document.getElementById('pq-opts'),q.opts,q.name,(chosen,correct)=>{
+    pqAnswered=true;
+    const ok=chosen===correct;
+    if(ok){ pqScore++; document.getElementById('pq-score').textContent=pqScore; }
+    markOpts(document.getElementById('pq-opts'),chosen,correct);
+    showFeedback('pq-fb','pq-fb-icon','pq-fb-title','pq-fb-desc',ok,q.desc);
+    const nb=document.getElementById('pq-next');
+    nb.classList.add('show');
+    nb.innerHTML=pqIdx<pqItems.length-1?'Next <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>':'See Results 🏆';
+  },q.desc);
+  document.getElementById('pq-fb').className='feedback';
+  document.getElementById('pq-next').classList.remove('show');
+  const card=document.querySelector('#screen-pq .game-card');
+  card.style.animation='none'; void card.offsetWidth; card.style.animation='slidein .4s ease';
+}
+document.getElementById('pq-next').addEventListener('click',()=>{
+  pqIdx++;
+  if(pqIdx<pqItems.length) pqRender();
+  else {
+    const tot=pqItems.length, pct=Math.round(pqScore/tot*100);
+    const [em,gr]=resultGrade(pct);
+    document.getElementById('pq-res-emoji').textContent=em;
+    document.getElementById('pq-res-grade').textContent=gr;
+    document.getElementById('pq-res-score').textContent=`${pqScore}/${tot}`;
+    document.getElementById('pq-res-msg').textContent=resultMsg(pct,'Photo Quiz');
+    document.getElementById('pq-r-c').textContent=pqScore;
+    document.getElementById('pq-r-w').textContent=tot-pqScore;
+    document.getElementById('pq-r-p').textContent=pct+'%';
+    buildRing('pq-ring',pct);
+    showScreen('screen-pq-res');
+  }
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   GAME 2: SPEED FLASH
+═══════════════════════════════════════════════════════════════ */
+let flItems=[], flIdx=0, flScore=0, flTimer=null;
+
+document.getElementById('fl-start').addEventListener('click',()=>{
+  flItems=shuffle(MENU).map(item=>{
+    const wrong=shuffle(MENU.filter(x=>x.name!==item.name)).slice(0,3).map(x=>x.name);
+    return {...item, opts:shuffle([item.name,...wrong])};
+  });
+  flIdx=0; flScore=0;
+  document.getElementById('fl-score').textContent=0;
+  showScreen('screen-fl');
+  flRender();
+});
+document.getElementById('fl-retry').addEventListener('click',()=>document.getElementById('fl-start').click());
+
+function flRender(){
+  const q=flItems[flIdx];
+  updateProgress('fl-cur','fl-tot','fl-pct','fl-bar',flIdx,flItems.length);
+  document.getElementById('fl-cat').textContent=q.cat;
+
+  // Show flash phase
+  const flashPhase=document.getElementById('fl-phase-flash');
+  const answerPhase=document.getElementById('fl-phase-answer');
+  flashPhase.style.display='flex';
+  answerPhase.style.display='none';
+  document.getElementById('fl-fb').className='feedback';
+  document.getElementById('fl-next').classList.remove('show');
+
+  const img=document.getElementById('fl-img');
+  img.src=q.img;
+
+  // Timer bar
+  const bar=document.getElementById('fl-timer-bar');
+  bar.style.transition='none';
+  bar.style.width='100%';
+  void bar.offsetWidth;
+  bar.style.transition='width 3s linear';
+  bar.style.width='0%';
+
+  if(flTimer) clearTimeout(flTimer);
+  flTimer=setTimeout(()=>{
+    flashPhase.style.display='none';
+    answerPhase.style.display='flex';
+    buildOpts(document.getElementById('fl-opts'),q.opts,q.name,(chosen,correct)=>{
+      const ok=chosen===correct;
+      if(ok){ flScore++; document.getElementById('fl-score').textContent=flScore; }
+      markOpts(document.getElementById('fl-opts'),chosen,correct);
+      showFeedback('fl-fb','fl-fb-icon','fl-fb-title','fl-fb-desc',ok,`The correct answer was: ${correct}`);
+      const nb=document.getElementById('fl-next');
+      nb.classList.add('show');
+      nb.innerHTML=flIdx<flItems.length-1?'Next <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>':'See Results 🏆';
+    },'');
+  },3000);
+
+  const card=document.querySelector('#screen-fl .game-card');
+  card.style.animation='none'; void card.offsetWidth; card.style.animation='slidein .4s ease';
+}
+document.getElementById('fl-next').addEventListener('click',()=>{
+  flIdx++;
+  if(flIdx<flItems.length) flRender();
+  else {
+    const tot=flItems.length, pct=Math.round(flScore/tot*100);
+    const [em,gr]=resultGrade(pct);
+    document.getElementById('fl-res-emoji').textContent=em;
+    document.getElementById('fl-res-grade').textContent=gr;
+    document.getElementById('fl-res-score').textContent=`${flScore}/${tot}`;
+    document.getElementById('fl-res-msg').textContent=resultMsg(pct,'Speed Flash');
+    document.getElementById('fl-r-c').textContent=flScore;
+    document.getElementById('fl-r-w').textContent=tot-flScore;
+    document.getElementById('fl-r-p').textContent=pct+'%';
+    buildRing('fl-ring',pct);
+    showScreen('screen-fl-res');
+  }
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   GAME 3: DESCRIPTION MATCH
+═══════════════════════════════════════════════════════════════ */
+let dmItems=[], dmIdx=0, dmScore=0;
+
+document.getElementById('dm-start').addEventListener('click',()=>{
+  dmItems=shuffle(MENU).map(item=>{
+    const wrong=shuffle(MENU.filter(x=>x.name!==item.name)).slice(0,3).map(x=>x.name);
+    return {...item, opts:shuffle([item.name,...wrong])};
+  });
+  dmIdx=0; dmScore=0;
+  document.getElementById('dm-score').textContent=0;
+  document.getElementById('dm-count').textContent=MENU.length;
+  showScreen('screen-dm');
+  dmRender();
+});
+document.getElementById('dm-retry').addEventListener('click',()=>document.getElementById('dm-start').click());
+
+function dmRender(){
+  const q=dmItems[dmIdx];
+  updateProgress('dm-cur','dm-tot','dm-pct','dm-bar',dmIdx,dmItems.length);
+  document.getElementById('dm-cat').textContent=q.cat;
+  document.getElementById('dm-desc').textContent=q.desc;
+  document.getElementById('dm-fb').className='feedback';
+  document.getElementById('dm-next').classList.remove('show');
+  buildOpts(document.getElementById('dm-opts'),q.opts,q.name,(chosen,correct)=>{
+    const ok=chosen===correct;
+    if(ok){ dmScore++; document.getElementById('dm-score').textContent=dmScore; }
+    markOpts(document.getElementById('dm-opts'),chosen,correct);
+    showFeedback('dm-fb','dm-fb-icon','dm-fb-title','dm-fb-desc',ok,ok?`Yes! That's the ${correct}.`:`That's the ${correct}.`);
+    const nb=document.getElementById('dm-next');
+    nb.classList.add('show');
+    nb.innerHTML=dmIdx<dmItems.length-1?'Next <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>':'See Results 🏆';
+  },'');
+  const card=document.querySelector('#screen-dm .game-card');
+  card.style.animation='none'; void card.offsetWidth; card.style.animation='slidein .4s ease';
+}
+document.getElementById('dm-next').addEventListener('click',()=>{
+  dmIdx++;
+  if(dmIdx<dmItems.length) dmRender();
+  else {
+    const tot=dmItems.length, pct=Math.round(dmScore/tot*100);
+    const [em,gr]=resultGrade(pct);
+    document.getElementById('dm-res-emoji').textContent=em;
+    document.getElementById('dm-res-grade').textContent=gr;
+    document.getElementById('dm-res-score').textContent=`${dmScore}/${tot}`;
+    document.getElementById('dm-res-msg').textContent=resultMsg(pct,'Description Match');
+    document.getElementById('dm-r-c').textContent=dmScore;
+    document.getElementById('dm-r-w').textContent=tot-dmScore;
+    document.getElementById('dm-r-p').textContent=pct+'%';
+    buildRing('dm-ring',pct);
+    showScreen('screen-dm-res');
+  }
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   GAME 4: DIETARY DASH
+═══════════════════════════════════════════════════════════════ */
+let ddPool=[], ddIdx=0, ddScore=0, ddAnswered=false;
+
+document.getElementById('dd-start').addEventListener('click',()=>{
+  ddPool=shuffle(buildDietPool()).slice(0,30);
+  ddIdx=0; ddScore=0; ddAnswered=false;
+  document.getElementById('dd-score').textContent=0;
+  showScreen('screen-dd');
+  ddRender();
+});
+document.getElementById('dd-retry').addEventListener('click',()=>document.getElementById('dd-start').click());
+
+function ddRender(){
+  ddAnswered=false;
+  const q=ddPool[ddIdx];
+  updateProgress('dd-cur','dd-tot','dd-pct','dd-bar',ddIdx,ddPool.length);
+  document.getElementById('dd-dish').textContent=q.dish;
+  document.getElementById('dd-claim').textContent=q.claim+'?';
+  document.getElementById('dd-fb').className='feedback';
+  document.getElementById('dd-next').classList.remove('show');
+  document.getElementById('dd-yes').disabled=false;
+  document.getElementById('dd-no').disabled=false;
+  document.getElementById('dd-yes').className='yn-btn yes';
+  document.getElementById('dd-no').className='yn-btn no';
+  const card=document.querySelector('#screen-dd .game-card');
+  card.style.animation='none'; void card.offsetWidth; card.style.animation='slidein .4s ease';
+}
+
+function handleDiet(userSaidYes){
+  if(ddAnswered) return;
+  ddAnswered=true;
+  const q=ddPool[ddIdx];
+  const ok=userSaidYes===q.answer;
+  if(ok){ ddScore++; document.getElementById('dd-score').textContent=ddScore; }
+
+  document.getElementById('dd-yes').disabled=true;
+  document.getElementById('dd-no').disabled=true;
+
+  // Style buttons
+  const yesBtn=document.getElementById('dd-yes');
+  const noBtn =document.getElementById('dd-no');
+  if(q.answer){
+    yesBtn.classList.add(userSaidYes?'correct':'');
+    noBtn.classList.add(!userSaidYes?'wrong':'dimmed');
+    if(!userSaidYes) yesBtn.classList.add('correct');
+    if(!userSaidYes) noBtn.classList.add('wrong');
+  } else {
+    noBtn.classList.add(userSaidYes?'':'correct');
+    yesBtn.classList.add(userSaidYes?'wrong':'dimmed');
+    if(userSaidYes) yesBtn.classList.add('wrong');
+    if(userSaidYes) noBtn.classList.add('correct');
+    if(!userSaidYes) noBtn.classList.add('correct');
+    if(!userSaidYes) yesBtn.classList.add('dimmed');
+  }
+
+  showFeedback('dd-fb','dd-fb-icon','dd-fb-title','dd-fb-desc',ok,q.hint);
+  const nb=document.getElementById('dd-next');
+  nb.classList.add('show');
+  nb.innerHTML=ddIdx<ddPool.length-1?'Next <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>':'See Results 🏆';
+}
+
+document.getElementById('dd-next').addEventListener('click',()=>{
+  ddIdx++;
+  if(ddIdx<ddPool.length) ddRender();
+  else {
+    const tot=ddPool.length, pct=Math.round(ddScore/tot*100);
+    const [em,gr]=resultGrade(pct);
+    document.getElementById('dd-res-emoji').textContent=em;
+    document.getElementById('dd-res-grade').textContent=gr;
+    document.getElementById('dd-res-score').textContent=`${ddScore}/${tot}`;
+    document.getElementById('dd-res-msg').textContent=resultMsg(pct,'Dietary Dash');
+    document.getElementById('dd-r-c').textContent=ddScore;
+    document.getElementById('dd-r-w').textContent=tot-ddScore;
+    document.getElementById('dd-r-p').textContent=pct+'%';
+    buildRing('dd-ring',pct);
+    showScreen('screen-dd-res');
+  }
+});
+
+/* ─── KEYBOARD SHORTCUTS ─────────────────────────────────────── */
+document.addEventListener('keydown',e=>{
+  const active=document.querySelector('.screen.active')?.id;
+  const map={'1':0,'2':1,'3':2,'4':3,'a':0,'b':1,'c':2,'d':3};
+  const idx=map[e.key.toLowerCase()];
+  if(['screen-pq','screen-fl','screen-dm'].includes(active)){
+    if(idx!==undefined){
+      const btns=document.querySelectorAll('.opt');
+      if(btns[idx]&&!btns[idx].disabled) btns[idx].click();
+    }
+    if(e.key==='Enter'||e.key===' '){
+      const nb=document.querySelector('.btn-next.show');
+      if(nb) nb.click();
+    }
+  }
+  if(active==='screen-dd'){
+    if(e.key==='y'||e.key==='ArrowRight') handleDiet(true);
+    if(e.key==='n'||e.key==='ArrowLeft')  handleDiet(false);
+    if(e.key==='Enter'||e.key===' '){
+      const nb=document.getElementById('dd-next');
+      if(nb.classList.contains('show')) nb.click();
+    }
+  }
+});
+</script>
+</body>
+</html>
