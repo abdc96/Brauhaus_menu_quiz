@@ -1146,18 +1146,20 @@ function handleDiet(userSaidYes){
   // Style buttons
   const yesBtn=document.getElementById('dd-yes');
   const noBtn =document.getElementById('dd-no');
-  if(q.answer){
-    yesBtn.classList.add(userSaidYes?'correct':'');
-    noBtn.classList.add(!userSaidYes?'wrong':'dimmed');
-    if(!userSaidYes) yesBtn.classList.add('correct');
-    if(!userSaidYes) noBtn.classList.add('wrong');
-  } else {
-    noBtn.classList.add(userSaidYes?'':'correct');
-    yesBtn.classList.add(userSaidYes?'wrong':'dimmed');
-    if(userSaidYes) yesBtn.classList.add('wrong');
-    if(userSaidYes) noBtn.classList.add('correct');
-    if(!userSaidYes) noBtn.classList.add('correct');
-    if(!userSaidYes) yesBtn.classList.add('dimmed');
+  if(q.answer){ // Correct answer is YES
+    yesBtn.classList.add('correct');
+    if(userSaidYes){
+      noBtn.classList.add('dimmed');
+    } else {
+      noBtn.classList.add('wrong');
+    }
+  } else { // Correct answer is NO
+    noBtn.classList.add('correct');
+    if(userSaidYes){
+      yesBtn.classList.add('wrong');
+    } else {
+      yesBtn.classList.add('dimmed');
+    }
   }
 
   showFeedback('dd-fb','dd-fb-icon','dd-fb-title','dd-fb-desc',ok,q.hint);
@@ -1187,15 +1189,17 @@ document.getElementById('dd-next').addEventListener('click',()=>{
 /* ─── KEYBOARD SHORTCUTS ─────────────────────────────────────── */
 document.addEventListener('keydown',e=>{
   const active=document.querySelector('.screen.active')?.id;
+  if(!active) return;
   const map={'1':0,'2':1,'3':2,'4':3,'a':0,'b':1,'c':2,'d':3};
   const idx=map[e.key.toLowerCase()];
   if(['screen-pq','screen-fl','screen-dm'].includes(active)){
+    const activeEl = document.getElementById(active);
     if(idx!==undefined){
-      const btns=document.querySelectorAll('.opt');
+      const btns=activeEl.querySelectorAll('.opt');
       if(btns[idx]&&!btns[idx].disabled) btns[idx].click();
     }
     if(e.key==='Enter'||e.key===' '){
-      const nb=document.querySelector('.btn-next.show');
+      const nb=activeEl.querySelector('.btn-next.show');
       if(nb) nb.click();
     }
   }
